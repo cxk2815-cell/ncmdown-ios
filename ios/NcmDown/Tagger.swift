@@ -27,7 +27,7 @@ public enum Tagger {
 
         var audioStart: UInt64 = 0
         if let fh = try? FileHandle(forReadingFrom: url) {
-            if let head = try? fh.read(upToCount: 10), let h = head, h.count == 10,
+            if let h = try? fh.read(upToCount: 10), h.count == 10,
                h[0] == 0x49, h[1] == 0x44, h[2] == 0x33 {
                 let size = synchsafeDecode(h, 6)
                 let flags = h[5]
@@ -88,7 +88,7 @@ public enum Tagger {
         guard let fh = try? FileHandle(forReadingFrom: url) else { return false }
         defer { try? fh.close() }
 
-        guard let magicData = try? fh.read(upToCount: 4), let magic = magicData, magic.count == 4,
+        guard let magic = try? fh.read(upToCount: 4), magic.count == 4,
               magic[0] == 0x66, magic[1] == 0x4C, magic[2] == 0x61, magic[3] == 0x43 else { return false }
 
         var blocks: [Data] = []
@@ -100,10 +100,10 @@ public enum Tagger {
 
         while pos + 4 <= total {
             try? fh.seek(toOffset: pos)
-            guard let headData = try? fh.read(upToCount: 4), let head = headData, head.count == 4 else { break }
+            guard let head = try? fh.read(upToCount: 4), head.count == 4 else { break }
             let h0 = head[0]
             let len = (Int(head[1]) << 16) | (Int(head[2]) << 8) | Int(head[3])
-            guard let payloadData = try? fh.read(upToCount: len), let payload = payloadData else { break }
+            guard let payload = try? fh.read(upToCount: len) else { break }
             let type = Int(h0 & 0x7F)
             let isLast = (h0 & 0x80) != 0
             if type == 0 {
@@ -210,7 +210,7 @@ public enum Tagger {
 
     private static func copyTail(from input: FileHandle, to out: FileHandle) {
         while true {
-            guard let chunk = try? input.read(upToCount: 262_144), let data = chunk, !data.isEmpty else { break }
+            guard let data = try? input.read(upToCount: 262_144), !data.isEmpty else { break }
             out.write(data)
         }
     }

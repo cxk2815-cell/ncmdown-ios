@@ -7,7 +7,7 @@ public enum Util {
     public static func detectExt(_ url: URL) -> String {
         guard let fh = try? FileHandle(forReadingFrom: url) else { return "" }
         defer { try? fh.close() }
-        guard let head = try? fh.read(upToCount: 16), let data = head, data.count >= 4 else { return "" }
+        guard let data = try? fh.read(upToCount: 16), data.count >= 4 else { return "" }
         let b = [UInt8](data)
         if b[0] == 0x66 && b[1] == 0x4C && b[2] == 0x61 && b[3] == 0x43 { return "flac" }
         if b[0] == 0x49 && b[1] == 0x44 && b[2] == 0x33 { return "mp3" }

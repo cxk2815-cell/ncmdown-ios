@@ -11,7 +11,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
 
@@ -41,17 +41,17 @@ jobs:
             -target NcmDown \
             -configuration Release \
             -sdk iphoneos \
-            -derivedDataPath build \
+            SYMROOT="$PWD/build" \
+            OBJROOT="$PWD/build/obj" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
             ONLY_ACTIVE_ARCH=NO \
-            build 2>&1 | tail -n 80
-
+            build 2>&1 | tail -n 100
       - name: Package unsigned IPA
         run: |
           cd ios
-          APP=$(find build -name "*.app" -maxdepth 6 -type d | head -1)
+          APP=$(find build/Release-iphoneos -maxdepth 1 -name "*.app" -type d | head -1)
           echo "app: $APP"
           if [ -z "$APP" ]; then echo "no .app produced"; exit 1; fi
           /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP/Info.plist" || true
