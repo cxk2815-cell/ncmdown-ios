@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<title>网易云下载器</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="gradbar"></div>
+
+<header class="appbar">
+  <div class="logo">♪</div>
+  <div class="titles">
+    <div class="h1">网易云下载器</div>
+    <div class="h2">歌单批量 · 320K/无损 · 歌词内嵌</div>
+  </div>
+  <div class="status" id="status">
+    <span class="dot" id="dot"></span><span id="statusText">就绪</span>
+  </div>
+</header>
+
+<main id="scroller">
+
+  <!-- ============ 搜索 ============ -->
+  <section class="page" id="page-search">
+    <div class="searchbar">
+      <input id="kw" type="search" placeholder="搜歌名 / 歌手" autocomplete="off" enterkeyhint="search">
+      <button class="btn primary" id="btnSearch">搜索</button>
+    </div>
+    <div class="metabar">
+      <span id="searchMeta">输入关键词开始</span>
+      <div class="pager">
+        <button class="mini" id="prevPage">‹</button>
+        <span id="pageNo">1</span>
+        <button class="mini" id="nextPage">›</button>
+      </div>
+    </div>
+    <div class="list" id="searchList"></div>
+    <div class="empty" id="searchEmpty">
+      <div class="empty-ico">♪</div>
+      <p>输入歌名或歌手名，回车搜索</p>
+      <p class="dim">支持任意关键词，结果里可以直接勾选下载</p>
+    </div>
+  </section>
+
+  <!-- ============ 歌单 / 榜单 ============ -->
+  <section class="page" id="page-crawl" hidden>
+    <div class="card">
+      <div class="card-title">粘贴链接批量下载</div>
+      <div class="modes">
+        <button class="mode active" data-mode="playlist">歌单 / 榜单</button>
+        <button class="mode" data-mode="artist">歌手 TOP50</button>
+      </div>
+      <div class="searchbar tight">
+        <input id="plink" type="text" placeholder="分享链接 / 歌单 ID" autocomplete="off">
+        <button class="btn primary" id="btnFetch">拉取</button>
+      </div>
+      <div class="hint" id="crawlHint">支持 music.163.com/#/playlist?id=… 、y.music.163.com、163cn.tv 短链、整段分享文案</div>
+      <div class="chips" id="quickCharts">
+        <button class="chip" data-pid="19723756">飙升</button>
+        <button class="chip" data-pid="3779629">新歌</button>
+        <button class="chip" data-pid="3778678">热歌</button>
+        <button class="chip" data-pid="2884035">原创</button>
+        <button class="chip" data-pid="991319590">说唱</button>
+      </div>
+    </div>
+
+    <div class="rowbar">
+      <div class="rowtitle" id="crawlTitle">还没有拉取歌单</div>
+      <label class="switch">
+        <input type="checkbox" id="autoDl" checked>
+        <span class="slider"></span>
+      </label>
+      <span class="switch-label">自动下载</span>
+    </div>
+    <div class="list" id="crawlList"></div>
+  </section>
+
+  <!-- ============ 队列 ============ -->
+  <section class="page" id="page-queue" hidden>
+    <div class="stats">
+      <div class="stat"><b id="statDone" class="green">0</b><span>完成</span></div>
+      <div class="stat"><b id="statFail" class="red">0</b><span>失败</span></div>
+      <div class="stat"><b id="statWait" class="amber">0</b><span>等待</span></div>
+    </div>
+    <div class="rowbar">
+      <div class="rowtitle">下载队列</div>
+      <button class="mini wide" id="btnStop">停止</button>
+      <button class="mini wide" id="btnClear">清空</button>
+    </div>
+    <div class="list" id="taskList"></div>
+    <div class="empty" id="queueEmpty">
+      <div class="empty-ico">⇩</div>
+      <p>队列是空的</p>
+      <p class="dim">去搜索或歌单页选歌下载</p>
+    </div>
+  </section>
+
+  <!-- ============ 设置 ============ -->
+  <section class="page" id="page-settings" hidden>
+    <div class="card">
+      <div class="card-title">导出设置</div>
+
+      <label class="field">
+        <span>音质</span>
+        <select id="setQuality">
+          <option value="auto">自动（最高可用）</option>
+          <option value="128">标准 128K</option>
+          <option value="192">较高 192K</option>
+          <option value="320">极高 320K</option>
+          <option value="lossless">无损 / 母带</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span>格式</span>
+        <select id="setFmt">
+          <option value="auto">原始格式</option>
+          <option value="mp3">MP3</option>
+          <option value="flac">FLAC</option>
+          <option value="m4a">M4A (AAC)</option>
+          <option value="wav">WAV</option>
+          <option value="aac">AAC</option>
+        </select>
+      </label>
+      <div class="hint">手机端直出对应格式；源文件不是该格式时会保留原始格式并在队列里注明</div>
+
+      <label class="field">
+        <span>文件名</span>
+        <input id="setNaming" type="text" value="{title} {artist}">
+      </label>
+      <div class="hint" id="namingHint">例：演员 薛之谦</div>
+
+      <label class="field">
+        <span>并发</span>
+        <input id="setConc" type="range" min="1" max="12" value="6">
+        <b id="concVal" class="val">6</b>
+      </label>
+
+      <label class="field row">
+        <span>写入歌词</span>
+        <label class="switch">
+          <input type="checkbox" id="setLyric" checked>
+          <span class="slider"></span>
+        </label>
+      </label>
+      <div class="hint">歌词写进音频标签（MP3 ID3 / FLAC Vorbis），不会额外生成文件</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">账号</div>
+      <textarea id="setCookie" rows="4" placeholder="粘贴 music.163.com 的 Cookie（含 MUSIC_U=...），可解锁无损与私密歌单"></textarea>
+      <div class="btnrow">
+        <button class="btn ghost" id="btnClearCookie">清空</button>
+        <button class="btn primary" id="btnSaveCookie">保存</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">保存位置</div>
+      <div class="kv"><span>目录</span><b id="saveDir">内部存储/Music/网易云音乐</b></div>
+      <div class="kv"><span>设备</span><b id="deviceInfo">—</b></div>
+      <div class="kv"><span>版本</span><b id="verInfo">v1.4.0</b></div>
+      <div class="btnrow">
+        <button class="btn ghost" id="btnSelftest">联机自检</button>
+        <button class="btn ghost" id="btnAbout">关于</button>
+      </div>
+    </div>
+    <div class="footer">仅供个人学习与自用备份 · 音乐版权归网易云及各版权方</div>
+  </section>
+
+  <div class="scrollpad"></div>
+</main>
+
+<!-- 选中操作条（搜索/歌单页） -->
+<div class="actionbar" id="actionbar">
+  <button class="btn ghost" id="btnSelectAll">全选</button>
+  <button class="btn primary grow" id="btnDownload">下载选中 (0)</button>
+</div>
+
+<nav class="tabbar">
+  <button class="tab active" data-page="search"><i>⌕</i><span>搜索</span></button>
+  <button class="tab" data-page="crawl"><i>≡</i><span>歌单</span></button>
+  <button class="tab" data-page="queue"><i>⇩</i><span>队列</span><b class="badge" id="badge" hidden>0</b></button>
+  <button class="tab" data-page="settings"><i>⚙</i><span>设置</span></button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script src="ios-bridge.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

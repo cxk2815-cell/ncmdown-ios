@@ -1,0 +1,69 @@
+name: build-ios
+
+# 无签名编译 iOS 工程 → NcmDown-unsigned.ipa
+# 产物可直接用 Sideloadly / AltStore 以个人 Apple ID 自签安装（免费账号 7 天有效）。
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "ios/**"
+      - ".github/workflows/build-ios.yml"
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          sw_vers
+
+      - name: Ensure Xcode project opens
+        run: |
+          cd ios
+          if xcodebuild -list -project NcmDown.xcodeproj >/dev/null 2>&1; then
+            echo "checked-in project.pbxproj OK"
+          else
+            echo "project.pbxproj unusable → regenerate from project.yml"
+            brew install xcodegen
+            xcodegen generate
+            xcodebuild -list -project NcmDown.xcodeproj
+          fi
+
+      - name: Build (unsigned)
+        run: |
+          cd ios
+          set -o pipefail
+          xcodebuild \
+            -project NcmDown.xcodeproj \
+            -target NcmDown \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            ONLY_ACTIVE_ARCH=NO \
+            build 2>&1 | tail -n 80
+
+      - name: Package unsigned IPA
+        run: |
+          cd ios
+          APP=$(find build -name "*.app" -maxdepth 6 -type d | head -1)
+          echo "app: $APP"
+          if [ -z "$APP" ]; then echo "no .app produced"; exit 1; fi
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP/Info.plist" || true
+          lipo -info "$APP/NcmDown" || true
+          rm -rf Payload && mkdir Payload
+          cp -R "$APP" Payload/
+          zip -qry NcmDown-unsigned.ipa Payload
+          ls -lh NcmDown-unsigned.ipa
+          shasum -a 256 NcmDown-unsigned.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NcmDown-unsigned-ipa
+          path: ios/NcmDown-unsigned.ipa
+          if-no-files-found: error
